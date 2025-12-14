@@ -1,4 +1,4 @@
-# cf-preview-cleaner
+# cwc (Cloudflare Workers Cleaner)
 
 Cloudflare Workers preview deployment を安全に削除するCLIツール。
 
@@ -16,8 +16,8 @@ React2shellのような脆弱性発生時に、preview deploymentを迅速かつ
 
 ```bash
 # リポジトリをクローン
-git clone https://github.com/your-org/cf-preview-cleaner.git
-cd cf-preview-cleaner
+git clone https://github.com/your-org/cwc.git
+cd cwc
 
 # 依存関係をインストール
 npm install
@@ -63,29 +63,29 @@ CLOUDFLARE_ACCOUNT_ID=your_account_id_here
 ### Deployment一覧を表示
 
 ```bash
-cf-preview-cleaner list <script-name>
+cwc list <script-name>
 
 # JSON形式で出力
-cf-preview-cleaner list <script-name> --json
+cwc list <script-name> --json
 ```
 
 ### Deploymentを削除
 
 ```bash
 # 対話的に選択して削除
-cf-preview-cleaner delete <script-name>
+cwc delete <script-name>
 
 # ドライラン（実際には削除しない）
-cf-preview-cleaner delete <script-name> --dry-run
+cwc delete <script-name> --dry-run
 
 # 確認をスキップ
-cf-preview-cleaner delete <script-name> --force
+cwc delete <script-name> --force
 
 # 非アクティブな全deploymentを削除
-cf-preview-cleaner delete <script-name> --all
+cwc delete <script-name> --all
 
 # 全て自動でYes
-cf-preview-cleaner delete <script-name> --all -y
+cwc delete <script-name> --all -y
 ```
 
 ## コマンドオプション
@@ -109,7 +109,7 @@ cf-preview-cleaner delete <script-name> --all -y
 
 ```bash
 # 開発モードで実行
-npm run dev -- list my-worker
+npm run dev list my-worker
 
 # 型チェック
 npm run typecheck

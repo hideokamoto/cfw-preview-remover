@@ -1,11 +1,11 @@
 {
-  "name": "cf-preview-cleaner",
+  "name": "cwc",
   "version": "1.0.0",
   "description": "Cloudflare Workers preview deploymentを安全に削除するCLIツール",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "cf-preview-cleaner": "./bin/cf-preview-cleaner"
+    "cwc": "./bin/cwc"
   },
   "scripts": {
     "build": "tsc",

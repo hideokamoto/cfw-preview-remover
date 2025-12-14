@@ -9,7 +9,7 @@ import { deleteCommand } from './commands/delete.js';
 const program = new Command();
 
 program
-  .name('cf-preview-cleaner')
+  .name('cwc')
   .description(
     'Safely delete Cloudflare Workers preview deployments.\n\n' +
       'Useful for cleaning up preview deployments after security vulnerabilities ' +

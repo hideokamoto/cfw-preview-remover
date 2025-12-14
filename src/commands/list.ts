@@ -53,7 +53,7 @@ export async function listCommand(
     const deletableCount = deployments.length - 1;
     if (deletableCount > 0) {
       logger.info(
-        `${deletableCount} deployment(s) can be deleted. Use "${chalk.cyan(`cf-preview-cleaner delete ${scriptName}`)}" to remove them.`
+        `${deletableCount} deployment(s) can be deleted. Use "${chalk.cyan(`cwc delete ${scriptName}`)}" to remove them.`
       );
     } else {
       logger.info('Only the active deployment exists. Nothing to delete.');
