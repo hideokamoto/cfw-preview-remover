@@ -32,10 +32,3 @@ export function getEnv(): Env {
 
   return result.data;
 }
-
-/**
- * Check if environment is configured (without throwing)
- */
-export function isEnvConfigured(): boolean {
-  return EnvSchema.safeParse(process.env).success;
-}

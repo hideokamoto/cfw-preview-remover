@@ -152,6 +152,30 @@ export class CloudflareAPI {
   }
 
   /**
+   * Format error message from unknown error type
+   */
+  private formatError(error: unknown): string {
+    return error instanceof Error
+      ? this.sanitize(error.message)
+      : 'Unknown error';
+  }
+
+  /**
+   * Attempt to delete a deployment, returning success status
+   */
+  private async tryDelete(
+    scriptName: string,
+    id: string
+  ): Promise<{ success: true } | { success: false; error: string }> {
+    try {
+      await this.deleteDeployment(scriptName, id);
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: this.formatError(error) };
+    }
+  }
+
+  /**
    * Delete multiple deployments with rate limiting protection
    */
   async deleteDeployments(
@@ -164,42 +188,31 @@ export class CloudflareAPI {
 
     for (let i = 0; i < deploymentIds.length; i++) {
       const id = deploymentIds[i];
-      try {
-        await this.deleteDeployment(scriptName, id);
+      let result = await this.tryDelete(scriptName, id);
+
+      // Retry once on rate limit error
+      if (!result.success) {
+        try {
+          await this.deleteDeployment(scriptName, id);
+        } catch (error) {
+          if (error instanceof RateLimitError) {
+            const waitTime = (error.retryAfter || 60) * 1000;
+            await this.delay(waitTime);
+            result = await this.tryDelete(scriptName, id);
+          }
+        }
+      }
+
+      if (result.success) {
         success.push(id);
         onProgress?.(i + 1, deploymentIds.length, id);
+      } else {
+        failed.push({ id, error: result.error });
+      }
 
-        // Add delay between requests to avoid rate limiting
-        if (i < deploymentIds.length - 1) {
-          await this.delay(this.requestDelay);
-        }
-      } catch (error) {
-        if (error instanceof RateLimitError) {
-          // Wait and retry once for rate limit errors
-          const waitTime = (error.retryAfter || 60) * 1000;
-          await this.delay(waitTime);
-          try {
-            await this.deleteDeployment(scriptName, id);
-            success.push(id);
-            onProgress?.(i + 1, deploymentIds.length, id);
-          } catch (retryError) {
-            failed.push({
-              id,
-              error:
-                retryError instanceof Error
-                  ? this.sanitize(retryError.message)
-                  : 'Unknown error',
-            });
-          }
-        } else {
-          failed.push({
-            id,
-            error:
-              error instanceof Error
-                ? this.sanitize(error.message)
-                : 'Unknown error',
-          });
-        }
+      // Add delay between requests to avoid rate limiting
+      if (i < deploymentIds.length - 1) {
+        await this.delay(this.requestDelay);
       }
     }
 

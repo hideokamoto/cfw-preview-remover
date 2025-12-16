@@ -34,6 +34,21 @@ export const logger = {
   },
 
   /**
+   * Format a date string safely, returning fallback for invalid dates
+   */
+  formatDate: (dateString: string): string => {
+    if (!dateString) {
+      return 'Unknown date';
+    }
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+      logger.debug(`Invalid date format: ${dateString}`);
+      return dateString;
+    }
+    return date.toLocaleString();
+  },
+
+  /**
    * Print a table-like list of deployments
    */
   printDeployments: (
@@ -46,7 +61,7 @@ export const logger = {
   ) => {
     console.log('');
     deployments.forEach((d, index) => {
-      const date = new Date(d.created_on).toLocaleString();
+      const date = logger.formatDate(d.created_on);
       const idShort = d.id.slice(0, 8);
       const activeLabel = d.isActive
         ? chalk.yellow(' (ACTIVE - cannot delete)')

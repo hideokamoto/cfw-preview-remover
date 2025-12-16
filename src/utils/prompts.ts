@@ -43,12 +43,8 @@ export async function selectDeploymentsToDelete(
  */
 export async function confirmDeletion(
   count: number,
-  options: { force?: boolean; dryRun?: boolean } = {}
+  options: { force?: boolean } = {}
 ): Promise<boolean> {
-  if (options.dryRun) {
-    return false;
-  }
-
   if (options.force) {
     return true;
   }

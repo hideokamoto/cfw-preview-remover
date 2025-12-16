@@ -11,12 +11,12 @@ import {
   confirmDeletion,
   confirmDeleteAll,
 } from '../utils/prompts.js';
+import type { Deployment } from '../lib/cloudflare-api.js';
 
 export interface DeleteOptions {
   dryRun?: boolean;
   force?: boolean;
   all?: boolean;
-  yes?: boolean;
 }
 
 export async function deleteCommand(
@@ -56,7 +56,7 @@ export async function deleteCommand(
     logger.newline();
 
     // Determine which deployments to delete
-    let toDelete;
+    let toDelete: Deployment[];
     if (options.all) {
       toDelete = deletableDeployments;
       logger.info(`Selected all ${toDelete.length} deletable deployment(s).`);
@@ -86,8 +86,8 @@ export async function deleteCommand(
 
     // Confirm deletion
     const shouldProceed = options.all
-      ? await confirmDeleteAll(toDelete.length, { force: options.force || options.yes })
-      : await confirmDeletion(toDelete.length, { force: options.force || options.yes });
+      ? await confirmDeleteAll(toDelete.length, { force: options.force })
+      : await confirmDeletion(toDelete.length, { force: options.force });
 
     if (!shouldProceed) {
       logger.info('Deletion cancelled.');

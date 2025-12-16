@@ -80,11 +80,9 @@ cwc delete <script-name> --dry-run
 
 # 確認をスキップ
 cwc delete <script-name> --force
+cwc delete <script-name> -y  # --force のエイリアス
 
-# 非アクティブな全deploymentを削除
-cwc delete <script-name> --all
-
-# 全て自動でYes
+# 非アクティブな全deploymentを削除（確認スキップ）
 cwc delete <script-name> --all -y
 ```
 
@@ -101,8 +99,7 @@ cwc delete <script-name> --all -y
 | オプション | 説明 |
 |-----------|------|
 | `--dry-run` | 削除をシミュレート（実際には削除しない） |
-| `--force` | 確認プロンプトをスキップ |
-| `-y, --yes` | 全ての確認に自動でYes |
+| `-y, --force` | 確認プロンプトをスキップ |
 | `--all` | アクティブ以外の全deploymentを削除 |
 
 ## 開発

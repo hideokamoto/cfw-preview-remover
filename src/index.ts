@@ -1,6 +1,5 @@
-#!/usr/bin/env node
 /**
- * cf-preview-cleaner - Cloudflare Workers preview deployment deletion CLI
+ * cwc - Cloudflare Workers Cleaner CLI
  */
 import { Command } from 'commander';
 import { listCommand } from './commands/list.js';
@@ -29,8 +28,7 @@ program
   .command('delete <script-name>')
   .description('Select and delete preview deployments')
   .option('--dry-run', 'Show what would be deleted without actually deleting')
-  .option('--force', 'Skip confirmation prompt')
-  .option('-y, --yes', 'Automatically answer yes to all prompts')
+  .option('-y, --force', 'Skip confirmation prompt')
   .option('--all', 'Delete all non-active deployments')
   .action(deleteCommand);
 
