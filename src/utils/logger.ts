@@ -75,6 +75,44 @@ export const logger = {
   },
 
   /**
+   * Print a table-like list of versions
+   */
+  printVersions: (
+    versions: Array<{
+      id: string;
+      number: number;
+      metadata: {
+        author_email?: string;
+        created_on?: string;
+      };
+      annotations?: {
+        'workers/message'?: string;
+        'workers/tag'?: string;
+      };
+      isActive?: boolean;
+    }>
+  ) => {
+    console.log('');
+    versions.forEach((v, index) => {
+      const date = logger.formatDate(v.metadata.created_on || '');
+      const idShort = v.id.slice(0, 8);
+      const author = v.metadata.author_email || 'unknown';
+      const tag = v.annotations?.['workers/tag'] || '';
+      const message = v.annotations?.['workers/message'] || '';
+      const activeLabel = v.isActive
+        ? chalk.yellow(' (ACTIVE - cannot delete)')
+        : '';
+      const tagLabel = tag ? chalk.magenta(` [${tag}]`) : '';
+      const messageLabel = message ? chalk.gray(` - ${message}`) : '';
+
+      console.log(
+        `  ${chalk.gray(`${index + 1}.`)} ${chalk.white(idShort)}... | #${v.number} | ${chalk.gray(date)} | ${chalk.blue(author)}${tagLabel}${messageLabel}${activeLabel}`
+      );
+    });
+    console.log('');
+  },
+
+  /**
    * Print a blank line
    */
   newline: () => {
