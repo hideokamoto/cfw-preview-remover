@@ -141,6 +141,8 @@ cwc versions list <script-name> --json
 
 ### Versionを削除（プレビューURLを完全削除）
 
+**注意**: Versionの削除には`wrangler`を使用します。初回実行時に`wrangler`が自動的にインストールされます。
+
 ```bash
 # 対話的に選択して削除
 cwc versions delete <script-name>
