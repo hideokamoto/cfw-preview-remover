@@ -4,6 +4,7 @@
 import { checkbox, confirm } from '@inquirer/prompts';
 import chalk from 'chalk';
 import type { Deployment, Version } from '../lib/cloudflare-api.js';
+import { logger } from './logger.js';
 
 /**
  * Display deployments and let user select which to delete
@@ -17,7 +18,7 @@ export async function selectDeploymentsToDelete(
   }
 
   const choices = deployments.map((d, index) => {
-    const date = new Date(d.created_on).toLocaleString();
+    const date = logger.formatDate(d.created_on);
     const idShort = d.id.slice(0, 8);
 
     return {
@@ -88,9 +89,7 @@ export async function selectVersionsToDelete(
   }
 
   const choices = versions.map((v, index) => {
-    const date = v.metadata.created_on
-      ? new Date(v.metadata.created_on).toLocaleString()
-      : 'Unknown date';
+    const date = logger.formatDate(v.metadata.created_on || '');
     const idShort = v.id.slice(0, 8);
     const author = v.metadata.author_email || 'unknown';
     const tag = v.annotations?.['workers/tag'];

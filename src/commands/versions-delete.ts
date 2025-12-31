@@ -75,15 +75,7 @@ export async function versionsDeleteCommand(
     // Dry run mode
     if (options.dryRun) {
       logger.dryRun('The following versions would be deleted:');
-      logger.newline();
-      toDelete.forEach((v) => {
-        const date = v.metadata.created_on
-          ? new Date(v.metadata.created_on).toLocaleString()
-          : 'Unknown date';
-        const author = v.metadata.author_email || 'unknown';
-        console.log(`  - ${v.id.slice(0, 8)}... (#${v.number}) (${date}) by ${author}`);
-      });
-      logger.newline();
+      logger.printVersions(toDelete);
       logger.dryRun(
         `Total: ${toDelete.length} version(s). No actual deletion performed.`
       );
