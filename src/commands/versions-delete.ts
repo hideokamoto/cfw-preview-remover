@@ -116,7 +116,7 @@ export async function versionsDeleteCommand(
     if (result.failed.length > 0) {
       logger.error(`Failed to delete ${result.failed.length} version(s):`);
       result.failed.forEach(({ id, error }) => {
-        console.log(chalk.red(`  - ${id.slice(0, 8)}...: ${error}`));
+        logger.error(`- ${id.slice(0, 8)}...: ${error}`);
       });
     }
 
