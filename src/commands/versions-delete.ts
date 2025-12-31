@@ -4,6 +4,7 @@
 import ora from 'ora';
 import chalk from 'chalk';
 import { CloudflareAPI, CloudflareAPIError } from '../lib/cloudflare-api.js';
+import { WranglerWrapper } from '../lib/wrangler-wrapper.js';
 import { getEnv } from '../config/index.js';
 import { logger } from '../utils/logger.js';
 import {
@@ -92,11 +93,16 @@ export async function versionsDeleteCommand(
       return;
     }
 
-    // Execute deletion
+    // Execute deletion using wrangler (more reliable for DELETE operations)
     logger.newline();
     const deleteSpinner = ora('Deleting versions...').start();
 
-    const result = await api.deleteVersions(
+    const wrangler = new WranglerWrapper({
+      apiToken: env.CLOUDFLARE_API_TOKEN,
+      accountId: env.CLOUDFLARE_ACCOUNT_ID,
+    });
+
+    const result = await wrangler.deleteVersions(
       scriptName,
       toDelete.map((v) => v.id),
       (completed, total, id) => {
