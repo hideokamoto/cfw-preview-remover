@@ -208,13 +208,14 @@ export class CloudflareAPI {
   private async tryDeleteVersion(
     scriptName: string,
     id: string
-  ): Promise<{ success: true } | { success: false; error: string; isRateLimit?: boolean }> {
+  ): Promise<{ success: true } | { success: false; error: string; isRateLimit?: boolean; retryAfter?: number }> {
     try {
       await this.deleteVersion(scriptName, id);
       return { success: true };
     } catch (error) {
       const isRateLimit = error instanceof RateLimitError;
-      return { success: false, error: this.formatError(error), isRateLimit };
+      const retryAfter = isRateLimit ? (error as RateLimitError).retryAfter : undefined;
+      return { success: false, error: this.formatError(error), isRateLimit, retryAfter };
     }
   }
 
@@ -235,7 +236,7 @@ export class CloudflareAPI {
 
       // Retry once on rate limit error
       if (!result.success && result.isRateLimit) {
-        const waitTime = 60 * 1000; // Default wait time
+        const waitTime = (result.retryAfter || 60) * 1000;
         await this.delay(waitTime);
         result = await this.tryDeleteVersion(scriptName, id);
       }
@@ -271,13 +272,14 @@ export class CloudflareAPI {
   private async tryDelete(
     scriptName: string,
     id: string
-  ): Promise<{ success: true } | { success: false; error: string; isRateLimit?: boolean }> {
+  ): Promise<{ success: true } | { success: false; error: string; isRateLimit?: boolean; retryAfter?: number }> {
     try {
       await this.deleteDeployment(scriptName, id);
       return { success: true };
     } catch (error) {
       const isRateLimit = error instanceof RateLimitError;
-      return { success: false, error: this.formatError(error), isRateLimit };
+      const retryAfter = isRateLimit ? (error as RateLimitError).retryAfter : undefined;
+      return { success: false, error: this.formatError(error), isRateLimit, retryAfter };
     }
   }
 
@@ -298,7 +300,7 @@ export class CloudflareAPI {
 
       // Retry once on rate limit error
       if (!result.success && result.isRateLimit) {
-        const waitTime = 60 * 1000; // Default wait time
+        const waitTime = (result.retryAfter || 60) * 1000;
         await this.delay(waitTime);
         result = await this.tryDelete(scriptName, id);
       }
