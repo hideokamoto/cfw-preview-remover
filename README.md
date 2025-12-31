@@ -14,6 +14,17 @@ React2shellのような脆弱性発生時に、preview deploymentを迅速かつ
 
 ## インストール
 
+### npxで実行（推奨）
+
+インストール不要で、直接実行できます：
+
+```bash
+# 環境変数を指定して実行
+CLOUDFLARE_API_TOKEN=your_token CLOUDFLARE_ACCOUNT_ID=your_account_id npx cwc list <script-name>
+```
+
+### ローカルインストール
+
 ```bash
 # リポジトリをクローン
 git clone https://github.com/your-org/cwc.git
@@ -33,6 +44,10 @@ npm link
 
 ### 環境変数
 
+環境変数は以下のいずれかの方法で設定できます：
+
+#### 方法1: `.env`ファイルを使用（推奨）
+
 `.env.example`をコピーして`.env`を作成し、必要な値を設定してください。
 
 ```bash
@@ -42,6 +57,22 @@ cp .env.example .env
 ```env
 CLOUDFLARE_API_TOKEN=your_api_token_here
 CLOUDFLARE_ACCOUNT_ID=your_account_id_here
+```
+
+#### 方法2: コマンドラインで直接指定
+
+`npx`で実行する場合や、一時的に別の認証情報を使う場合：
+
+```bash
+CLOUDFLARE_API_TOKEN=your_api_token_here CLOUDFLARE_ACCOUNT_ID=your_account_id_here npx cwc list <script-name>
+```
+
+#### 方法3: システムの環境変数として設定
+
+```bash
+export CLOUDFLARE_API_TOKEN=your_api_token_here
+export CLOUDFLARE_ACCOUNT_ID=your_account_id_here
+cwc list <script-name>
 ```
 
 ### APIトークンの作成
