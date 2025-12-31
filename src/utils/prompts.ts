@@ -3,7 +3,8 @@
  */
 import { checkbox, confirm } from '@inquirer/prompts';
 import chalk from 'chalk';
-import type { Deployment } from '../lib/cloudflare-api.js';
+import type { Deployment, Version } from '../lib/cloudflare-api.js';
+import { logger } from './logger.js';
 
 /**
  * Display deployments and let user select which to delete
@@ -17,7 +18,7 @@ export async function selectDeploymentsToDelete(
   }
 
   const choices = deployments.map((d, index) => {
-    const date = new Date(d.created_on).toLocaleString();
+    const date = logger.formatDate(d.created_on);
     const idShort = d.id.slice(0, 8);
 
     return {
@@ -71,6 +72,80 @@ export async function confirmDeleteAll(
   return confirm({
     message: chalk.red(
       `You are about to delete ALL ${count} non-active deployment(s). This action cannot be undone. Continue?`
+    ),
+    default: false,
+  });
+}
+
+/**
+ * Display versions and let user select which to delete
+ * The first version (active) is disabled and cannot be selected
+ */
+export async function selectVersionsToDelete(
+  versions: Version[]
+): Promise<Version[]> {
+  if (versions.length === 0) {
+    return [];
+  }
+
+  const choices = versions.map((v, index) => {
+    const date = logger.formatDate(v.metadata.created_on || '');
+    const idShort = v.id.slice(0, 8);
+    const author = v.metadata.author_email || 'unknown';
+    const tag = v.annotations?.['workers/tag'];
+    const tagLabel = tag ? ` [${tag}]` : '';
+
+    return {
+      name: `${idShort}... | #${v.number} | ${date} | ${author}${tagLabel}`,
+      value: v,
+      disabled:
+        index === 0
+          ? chalk.yellow('(Currently active - cannot delete)')
+          : false,
+    };
+  });
+
+  return checkbox({
+    message:
+      'Select versions to delete (Space to select, Enter to confirm):',
+    choices,
+    pageSize: 15,
+  });
+}
+
+/**
+ * Confirm version deletion with the user
+ */
+export async function confirmVersionDeletion(
+  count: number,
+  options: { force?: boolean } = {}
+): Promise<boolean> {
+  if (options.force) {
+    return true;
+  }
+
+  return confirm({
+    message: chalk.red(
+      `You are about to delete ${count} version(s). This will remove their preview URLs permanently. Continue?`
+    ),
+    default: false,
+  });
+}
+
+/**
+ * Confirm deletion of all non-active versions
+ */
+export async function confirmDeleteAllVersions(
+  count: number,
+  options: { force?: boolean } = {}
+): Promise<boolean> {
+  if (options.force) {
+    return true;
+  }
+
+  return confirm({
+    message: chalk.red(
+      `You are about to delete ALL ${count} non-active version(s). This will remove all preview URLs permanently. Continue?`
     ),
     default: false,
   });

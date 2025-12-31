@@ -21,6 +21,31 @@ export interface Deployment {
   versions: DeploymentVersion[];
 }
 
+/**
+ * Worker Version - represents an immutable snapshot of code and configuration
+ * Versions are what preview URLs are tied to
+ */
+export interface Version {
+  id: string;
+  number: number;
+  metadata: {
+    author_id?: string;
+    author_email?: string;
+    source?: string;
+    created_on?: string;
+    modified_on?: string;
+  };
+  annotations?: {
+    'workers/triggered_by'?: string;
+    'workers/message'?: string;
+    'workers/tag'?: string;
+  };
+}
+
+interface VersionsResult {
+  items: Version[];
+}
+
 interface CloudflareResponse<T> {
   success: boolean;
   result: T;
@@ -152,6 +177,87 @@ export class CloudflareAPI {
   }
 
   /**
+   * List all versions for a Worker script
+   * Versions are immutable snapshots of code and configuration
+   * The first version in the list is the latest (currently deployed) version
+   */
+  async listVersions(scriptName: string): Promise<Version[]> {
+    const result = await this.request<VersionsResult>(
+      `/accounts/${this.config.accountId}/workers/scripts/${scriptName}/versions`
+    );
+    return result.items;
+  }
+
+  /**
+   * Delete a specific version
+   * Note: The currently active version (referenced by the active deployment) cannot be deleted
+   */
+  async deleteVersion(
+    scriptName: string,
+    versionId: string
+  ): Promise<void> {
+    await this.request(
+      `/accounts/${this.config.accountId}/workers/scripts/${scriptName}/versions/${versionId}`,
+      { method: 'DELETE' }
+    );
+  }
+
+  /**
+   * Attempt to delete a version, returning success status
+   */
+  private async tryDeleteVersion(
+    scriptName: string,
+    id: string
+  ): Promise<{ success: true } | { success: false; error: string; isRateLimit?: boolean; retryAfter?: number }> {
+    try {
+      await this.deleteVersion(scriptName, id);
+      return { success: true };
+    } catch (error) {
+      const isRateLimit = error instanceof RateLimitError;
+      const retryAfter = isRateLimit ? (error as RateLimitError).retryAfter : undefined;
+      return { success: false, error: this.formatError(error), isRateLimit, retryAfter };
+    }
+  }
+
+  /**
+   * Delete multiple versions with rate limiting protection
+   */
+  async deleteVersions(
+    scriptName: string,
+    versionIds: string[],
+    onProgress?: (completed: number, total: number, id: string) => void
+  ): Promise<{ success: string[]; failed: Array<{ id: string; error: string }> }> {
+    const success: string[] = [];
+    const failed: Array<{ id: string; error: string }> = [];
+
+    for (let i = 0; i < versionIds.length; i++) {
+      const id = versionIds[i];
+      let result = await this.tryDeleteVersion(scriptName, id);
+
+      // Retry once on rate limit error
+      if (!result.success && result.isRateLimit) {
+        const waitTime = (result.retryAfter || 60) * 1000;
+        await this.delay(waitTime);
+        result = await this.tryDeleteVersion(scriptName, id);
+      }
+
+      if (result.success) {
+        success.push(id);
+        onProgress?.(i + 1, versionIds.length, id);
+      } else {
+        failed.push({ id, error: result.error });
+      }
+
+      // Add delay between requests to avoid rate limiting
+      if (i < versionIds.length - 1) {
+        await this.delay(this.requestDelay);
+      }
+    }
+
+    return { success, failed };
+  }
+
+  /**
    * Format error message from unknown error type
    */
   private formatError(error: unknown): string {
@@ -166,13 +272,14 @@ export class CloudflareAPI {
   private async tryDelete(
     scriptName: string,
     id: string
-  ): Promise<{ success: true } | { success: false; error: string; isRateLimit?: boolean }> {
+  ): Promise<{ success: true } | { success: false; error: string; isRateLimit?: boolean; retryAfter?: number }> {
     try {
       await this.deleteDeployment(scriptName, id);
       return { success: true };
     } catch (error) {
       const isRateLimit = error instanceof RateLimitError;
-      return { success: false, error: this.formatError(error), isRateLimit };
+      const retryAfter = isRateLimit ? (error as RateLimitError).retryAfter : undefined;
+      return { success: false, error: this.formatError(error), isRateLimit, retryAfter };
     }
   }
 
@@ -193,18 +300,9 @@ export class CloudflareAPI {
 
       // Retry once on rate limit error
       if (!result.success && result.isRateLimit) {
-        // Get retry-after time from the original error
-        try {
-          await this.deleteDeployment(scriptName, id);
-        } catch (error) {
-          if (error instanceof RateLimitError) {
-            const waitTime = (error.retryAfter || 60) * 1000;
-            await this.delay(waitTime);
-            result = await this.tryDelete(scriptName, id);
-          }
-          // If it's not a rate limit error, the retry attempt failed
-          // result remains as the original failure
-        }
+        const waitTime = (result.retryAfter || 60) * 1000;
+        await this.delay(waitTime);
+        result = await this.tryDelete(scriptName, id);
       }
 
       if (result.success) {
