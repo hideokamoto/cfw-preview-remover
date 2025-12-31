@@ -166,12 +166,13 @@ export class CloudflareAPI {
   private async tryDelete(
     scriptName: string,
     id: string
-  ): Promise<{ success: true } | { success: false; error: string }> {
+  ): Promise<{ success: true } | { success: false; error: string; isRateLimit?: boolean }> {
     try {
       await this.deleteDeployment(scriptName, id);
       return { success: true };
     } catch (error) {
-      return { success: false, error: this.formatError(error) };
+      const isRateLimit = error instanceof RateLimitError;
+      return { success: false, error: this.formatError(error), isRateLimit };
     }
   }
 
@@ -191,7 +192,8 @@ export class CloudflareAPI {
       let result = await this.tryDelete(scriptName, id);
 
       // Retry once on rate limit error
-      if (!result.success) {
+      if (!result.success && result.isRateLimit) {
+        // Get retry-after time from the original error
         try {
           await this.deleteDeployment(scriptName, id);
         } catch (error) {
@@ -200,6 +202,8 @@ export class CloudflareAPI {
             await this.delay(waitTime);
             result = await this.tryDelete(scriptName, id);
           }
+          // If it's not a rate limit error, the retry attempt failed
+          // result remains as the original failure
         }
       }
 
